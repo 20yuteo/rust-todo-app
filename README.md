@@ -1,4 +1,4 @@
 # Rust Todo App
 
 - 参考
-  https://zenn.dev/daiki_record/articles/a5d9f8312fdfc8
+  https://www.freecodecamp.org/news/how-to-build-a-to-do-app-with-rust/
