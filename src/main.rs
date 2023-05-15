@@ -59,7 +59,7 @@ fn main() {
     let action: &String = &args[1];
     let mut item = String::new();
 
-    if action != "h" || action != "help" {
+    if action == "h" || action == "help" {
         println!("insert your item: cargo run -- insert or cargo run -- i\n");
         println!("and then\n");
         println!("input your item...\n");
