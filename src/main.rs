@@ -58,20 +58,37 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     let action: &String = &args[1];
     let mut item = String::new();
-    if action != "all" {
+
+    if action != "h" || action != "help" {
+        println!("insert your item: cargo run -- insert or cargo run -- i\n");
+        println!("and then\n");
+        println!("input your item...\n");
+
+        println!("complete your item: cargo run -- complete or cargo run -- c\n");
+        println!("and then\n");
+        println!("input your item...\n");
+
+        println!("insert item: cargo run -- all or cargo run -- a\n");
+        println!("and then\n");
+        println!("input your item...\n");
+
+        return;
+    }
+
+    if action != "all" || action != "a" {
         println!("input your items");
         std::io::stdin().read_line(&mut item).expect("failed to read line.");
     }
 
     let mut todo = Todo::new().expect("Initialisation of db failed");
 
-    if action == "add" {
+    if action == "insert" || action == "i" {
         todo.insert(item.trim().to_string());
         match todo.save() {
             Ok(_) => println!("todo saved!"),
             Err(why) => println!("An error occurred: {}", why),
         }
-    } else if action == "complete" {
+    } else if action == "complete" || action == "c" {
         match todo.complete(&item) {
             None => println!("{} is not present in the list", item),
             Some(_) => match todo.save() {
@@ -79,7 +96,7 @@ fn main() {
                 Err(why) => println!("An error occurred: {}",why),
             },
         }
-    } else if action == "all" {
+    } else if action == "all" || action == "a" {
         let todo_list = todo.find_all();
         println!("todo_list: {}", todo_list);
     }
