@@ -1,0 +1,5 @@
+{
+  "suggest": true,
+  "code rust": true,
+  "make coffee": false
+}

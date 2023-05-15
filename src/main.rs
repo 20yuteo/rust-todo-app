@@ -1,5 +1,4 @@
-use std::{collections::HashMap, io::Read};
-use std::str::FromStr;
+use std::{collections::HashMap, io::{Read}, fs::File};
 
 struct Todo {
     map: HashMap<String, bool>,
@@ -7,38 +6,44 @@ struct Todo {
 
 impl Todo {
     fn new() -> Result<Todo, std::io::Error> {
-        let mut f = std::fs::OpenOptions::new()
+        let f = std::fs::OpenOptions::new()
             .write(true)
             .create(true)
             .read(true)
-            .open("out.txt")?;
+            .open("db.json")?;
 
-        let mut content = String::new();
-        f.read_to_string(&mut content)?;
-        
-        let mut map = HashMap::new();
-
-        for entries in content.lines() {
-            let mut values =  entries.split('\t');
-            let key = values.next().expect("No Keys");
-            let value = values.next().expect("No Values");
-
-            map.insert(String::from(key), bool::from_str(value).unwrap());
-        };
-        Ok(Todo { map })
+        match serde_json::from_reader(f) {
+            Ok(map) => Ok(Todo {map}),
+            Err(e) if e.is_eof() => Ok(Todo {
+                map: HashMap::new(),
+            }),
+            Err(e) => panic!("An error occurred: {}", e)
+        }
     }
 
     fn insert(&mut self, key: String) {
         self.map.insert(key, true);
     }
 
-    fn save(self) -> Result<(), std::io::Error> {
-        let mut content = String::new();
-        for (k, v) in self.map {
-            let record = format!("{}\t{}\n", k, v);
-            content.push_str(&record);
-        }
-        return std::fs::write("./out.txt", content);
+    fn save(self) -> Result<(), Box<dyn std::error::Error>> {
+        let f = std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open("db.json")?;
+
+        serde_json::to_writer_pretty(f, &self.map)?;
+        Ok(())
+    }
+
+    fn get_file(self) -> File {
+        return File::open("db.json").expect("file not found");
+    }
+
+    fn find_all(self) -> std::string::String {
+        let mut contents = String::new();
+        let mut file = self.get_file();
+        let _ = file.read_to_string(&mut contents);
+        return contents;
     }
 
     fn complete(&mut self, key: &String) -> Option<()> {
@@ -50,15 +55,18 @@ impl Todo {
 }
 
 fn main() {
-    let action = std::env::args().nth(1).expect("Please specify an action");
-    let item = std::env::args().nth(2).expect("Please specify an item");
+    let args: Vec<String> = std::env::args().collect();
+    let action: &String = &args[1];
+    let mut item = String::new();
+    if action != "all" {
+        println!("input your items");
+        std::io::stdin().read_line(&mut item).expect("failed to read line.");
+    }
 
-    println!("{:?}, {:?}", action, item);
-
-let mut todo = Todo::new().expect("Initialisation of db failed");
+    let mut todo = Todo::new().expect("Initialisation of db failed");
 
     if action == "add" {
-        todo.insert(item);
+        todo.insert(item.trim().to_string());
         match todo.save() {
             Ok(_) => println!("todo saved!"),
             Err(why) => println!("An error occurred: {}", why),
@@ -71,5 +79,8 @@ let mut todo = Todo::new().expect("Initialisation of db failed");
                 Err(why) => println!("An error occurred: {}",why),
             },
         }
+    } else if action == "all" {
+        let todo_list = todo.find_all();
+        println!("todo_list: {}", todo_list);
     }
 }
