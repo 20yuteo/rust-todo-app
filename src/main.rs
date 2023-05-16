@@ -1,5 +1,6 @@
-use std::{collections::HashMap, io::{Read}, fs::File};
+use std::{collections::HashMap, io::{Read}, fs::{File, self}};
 
+#[derive(Debug)]
 struct Todo {
     map: HashMap<String, bool>,
 }
@@ -26,6 +27,8 @@ impl Todo {
     }
 
     fn save(self) -> Result<(), Box<dyn std::error::Error>> {
+        let _ = fs::remove_file("db.json");
+
         let f = std::fs::OpenOptions::new()
             .write(true)
             .create(true)
@@ -52,12 +55,16 @@ impl Todo {
             None => None,
         }
     }
+
+    fn delete(&mut self, key: &String) -> Option<bool> {
+        self.map.remove(key)
+    }
 }
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let action: &String = &args[1];
-    let mut item = String::new();
+    let mut arg = String::new();
 
     if action == "h" || action == "help" {
         println!("insert your item: cargo run -- insert or cargo run -- i\n");
@@ -77,8 +84,10 @@ fn main() {
 
     if action != "all" || action != "a" {
         println!("input your items");
-        std::io::stdin().read_line(&mut item).expect("failed to read line.");
+        std::io::stdin().read_line(&mut arg).expect("failed to read line.");
     }
+
+    let item = arg.trim().to_string();
 
     let mut todo = Todo::new().expect("Initialisation of db failed");
 
@@ -95,6 +104,12 @@ fn main() {
                 Ok(_) => println!("todo saved!"),
                 Err(why) => println!("An error occurred: {}",why),
             },
+        }
+    } else if action == "delete" || action == "d" {
+        todo.delete(&item.trim().to_string());
+        match todo.save() {
+            Ok(_) => println!("todo saved!"),
+            Err(why) => println!("An error occurred: {}", why),
         }
     } else if action == "all" || action == "a" {
         let todo_list = todo.find_all();
